@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Pendik Türk Telekom Şehit Murat Mertel MTAL - AI Chatbot Demo">
+  <title>TT MTAL — Chatbot Widget Demo</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f0f4ff;
+      color: #1e293b;
+      min-height: 100vh;
+    }
+
+    /* Header band */
+    .demo-header {
+      background: linear-gradient(135deg, #1e3a5f, #0f2644);
+      color: white;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .demo-header img {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+    }
+
+    .demo-header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .demo-header p {
+      font-size: 0.78rem;
+      opacity: 0.7;
+    }
+
+    /* Content */
+    .demo-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .demo-card {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .demo-card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 12px;
+      color: #1e3a5f;
+    }
+
+    .demo-card p {
+      line-height: 1.7;
+      color: #475569;
+      margin-bottom: 12px;
+    }
+
+    .demo-card .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .embed-code {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 20px 24px;
+      color: #e2e8f0;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin-top: 16px;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    .embed-code .comment {
+      color: #64748b;
+    }
+
+    .embed-code .tag {
+      color: #f97316;
+    }
+
+    .embed-code .attr {
+      color: #38bdf8;
+    }
+
+    .embed-code .str {
+      color: #a5f3fc;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #94a3b8;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: rgba(99, 102, 241, 0.3);
+      color: white;
+    }
+
+    .api-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .api-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 0.85rem;
+    }
+
+    .api-item strong {
+      color: #4f46e5;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .api-item code {
+      display: block;
+      margin-top: 4px;
+      font-family: 'Courier New', monospace;
+      color: #334155;
+      font-size: 0.82rem;
+    }
+
+    .arrow-indicator {
+      position: fixed;
+      bottom: 90px;
+      left: 28px;
+      background: #4f46e5;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+      animation: arrow-bounce 1.5s infinite;
+      z-index: 99997;
+      pointer-events: none;
+    }
+
+    .arrow-indicator::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 20px;
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #4f46e5;
+    }
+
+    @keyframes arrow-bounce {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-8px);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- School Header (simulated) -->
+  <div class="demo-header">
+    <div
+      style="width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#4f46e5,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:white;">
+      TT</div>
+    <div>
+      <h1>Pendik Türk Telekom Şehit Murat Mertel MTAL</h1>
+      <p>İSTANBUL / PENDİK — Chatbot Widget Demo Sayfası</p>
+    </div>
+  </div>
+
+  <div class="demo-content">
+    <!-- Info Card -->
+    <div class="demo-card">
+      <span class="badge">🤖 AI Chatbot Widget</span>
+      <h2 style="margin-top:16px">Okul Chatbot'u Nasıl Çalışır?</h2>
+      <p>
+        Sol alt köşedeki <strong>💬 butonuna</strong> tıklayarak chatbot'u açabilirsiniz.
+        Chatbot, okul web sitesinden (<strong>turktelekomatl.meb.k12.tr</strong>) güncel bilgileri çeker
+        ve Groq yapay zeka API'si ile soruları yanıtlar.
+      </p>
+      <p>
+        Veriler <strong>30 dakikada bir otomatik güncellenir</strong>. Manuel güncelleme için
+        <code>/api/scrape</code> endpoint'ini çağırabilirsiniz.
+      </p>
+    </div>
+
+    <!-- Embed Code -->
+    <div class="demo-card">
+      <h2>📦 Okul Sitesine Ekleme Kodu</h2>
+      <p>Aşağıdaki kodu okul web sitesinin <code>&lt;/body&gt;</code> etiketinin hemen üstüne ekleyin:</p>
+      <div class="embed-code">
+        <button class="copy-btn"
+          onclick="navigator.clipboard.writeText(document.getElementById('embed-text').textContent);this.textContent='Kopyalandı ✓';setTimeout(()=>this.textContent='Kopyala',2000)">Kopyala</button>
+        <span id="embed-text"><span class="comment">&lt;!-- TT MTAL AI Chatbot Widget --&gt;</span>
+          <span class="tag">&lt;script</span> <span class="attr">src</span>=<span
+            class="str">"http://SUNUCU_ADRESI:3000/chatbot-widget.js"</span><span
+            class="tag">&gt;&lt;/script&gt;</span></span>
+      </div>
+      <p style="margin-top:12px;font-size:0.85rem;color:#64748b;">
+        ⚠️ <code>SUNUCU_ADRESI</code> kısmını API sunucunuzun gerçek IP/domain adresiyle değiştirin.
+      </p>
+    </div>
+
+    <!-- API Endpoints -->
+    <div class="demo-card">
+      <h2>🔌 API Endpoint'leri</h2>
+      <p>Chatbot API sunucusu aşağıdaki endpoint'leri sunar:</p>
+      <div class="api-list">
+        <div class="api-item">
+          <strong>POST</strong>
+          <code>/api/chat</code>
+          <small style="color:#64748b">Sohbet mesajı gönder</small>
+        </div>
+        <div class="api-item">
+          <strong>GET</strong>
+          <code>/api/scrape</code>
+          <small style="color:#64748b">Verileri güncelle</small>
+        </div>
+        <div class="api-item">
+          <strong>GET</strong>
+          <code>/api/status</code>
+          <small style="color:#64748b">Sunucu durumu</small>
+        </div>
+        <div class="api-item">
+          <strong>GET</strong>
+          <code>/api/data</code>
+          <small style="color:#64748b">Ham okul verisi</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Arrow pointing to widget -->
+  <div class="arrow-indicator">👇 Chatbot burada!</div>
+
+  <!-- WIDGET - Bu tek satır okul sitesine eklenir -->
+  <script src="/chatbot-widget.js"></script>
+
+</body>
+
+</html>

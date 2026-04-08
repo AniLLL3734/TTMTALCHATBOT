@@ -1,0 +1,105 @@
+{
+  "genel": {
+    "ad": "Pendik Türk Telekom Şehit Murat Mertel Mesleki ve Teknik Anadolu Lisesi",
+    "kisaAd": "Pendik TT MTAL",
+    "il": "İstanbul",
+    "ilce": "Pendik",
+    "tur": "Mesleki ve Teknik Anadolu Lisesi",
+    "bagliOlduguKurum": "Mesleki ve Teknik Eğitim Genel Müdürlüğü",
+    "ogretimTuru": "Gündüzlü ve Normal Öğretim",
+    "ogrenimSuresi": "4 yıl",
+    "projeOkulu": "Hayır, proje okulu statüsünde değildir.",
+    "programlar": "Anadolu Teknik Programı (ATP) ve Anadolu Meslek Programı (AMP)",
+    "website": "https://turktelekomatl.meb.k12.tr"
+  },
+  "iletisim": {
+    "adres": "Çınardere Mahallesi Nil Sokak No 14 İç Kapı No 1 Pendik / İSTANBUL",
+    "telefon": "(216) 379 0410",
+    "web": "https://turktelekomatl.meb.k12.tr",
+    "randevu": "https://okulrandevu.meb.gov.tr adresinden okuldan randevu alınabilir."
+  },
+  "istatistikler": {
+    "derslikSayisi": 15,
+    "ogretmenSayisi": 55,
+    "ogrenciSayisi": 655,
+    "ustOgrenimeYerlestirmeOrani": "%36,84 (2025 yılı itibarıyla)"
+  },
+  "tarihce": "Okulumuz 2006-2007 eğitim yılı başında açılmıştır. Ulaştırma Bakanlığı aracılığı ile Türk Telekom A.Ş. tarafından yaptırılmıştır. Yurt çapında yaptırılması planlanan 33 adet okuldan bir tanesidir. Okulumuz inşaatı bitmediği için eğitim ve öğretimine ilk 6 ay Kırımlı Fazilet Olcay Anadolu Lisesi 4. katında sürdürmüştür. 12.04.2007 tarihinde resmi açılışı yapılmıştır. 15 Temmuz 2016 darbe girişiminde Türk Telekom binası önünde şehit olan Murat Mertel'in anısına okulun ismine şehidimizin adı eklenmiştir.",
+  "mudur": {
+    "ad": "Ömer Faruk GENÇ",
+    "unvan": "Okul Müdürü"
+  },
+  "alanVeDallar": {
+    "alan": "Bilişim Teknolojileri Alanı",
+    "dal": "Yazılım Geliştirme Dalı",
+    "aciklama": "Bilişim Teknolojileri Alanında öğrenciler; yazılım temelleri, programlama, web teknolojileri ve mesleki uygulamalara yönelik dersler almaktadır.",
+    "isAlanlari": "Yazılımcı, programcı, bilgisayar teknikeri, grafiker gibi alanların yanı sıra kamu ve özel sektör kurumlarının bilgi işlem merkezlerinde istihdam edilebilmektedir.",
+    "nedenTercihEtmeliyim": "Bilişim Teknolojileri Alanı dijital çağın gerektirdiği bilgi ve becerileri kazandıran, istihdam olanakları geniş bir alandır. Lise diplomasının yanında İŞ YERİ AÇMA BELGESİ alma imkânı sunar."
+  },
+  "kayitBilgileri": {
+    "atp": {
+      "kontenjan": "30 öğrenci",
+      "tabanPuani": "345,0686 (2025 yılı)",
+      "yuzdelikDilim": "%20,92",
+      "yerlesmeKriteri": "LGS sınav puanı",
+      "staj": "10-11-12. Sınıf yaz tatilleri süresince toplamda 40 iş günü staj"
+    },
+    "amp": {
+      "kontenjan": "120 öğrenci",
+      "tabanPuani": "80,3407 (2025 yılı, yerel yerleştirme)",
+      "yerlesmeKriteri": "Diploma puanı ve adrese dayalı yerleştirme",
+      "staj": "12. sınıf öğrencileri haftanın 3 günü staj yapar"
+    }
+  },
+  "fizikiImkanlar": [
+    "1 adet kütüphane",
+    "1 adet konferans salonu",
+    "6 adet Bilişim Teknolojileri Laboratuvarı",
+    "1 adet yemekhane",
+    "1 adet ibadethane",
+    "15 derslik"
+  ],
+  "kiyafet": "Okul arması, siyah pantolon ve siyah tişört. Zorunludur.",
+  "burs": "Okulumuza özel bir burs uygulaması bulunmamaktadır.",
+  "yurt": "Yurt veya pansiyon bulunmamaktadır.",
+  "servis": "Öğrenciler için servis hizmeti bulunmaktadır.",
+  "dyk": "Hafta sonları Destekleme ve Yetiştirme Kursları (DYK) açılmaktadır.",
+  "basarilar": [
+    "TEKDER Bir Fikir Bir Proje Yarışmaları (İstanbul 1. ve 2.lik)",
+    "TÜBİTAK 4006 Bilim Fuarları",
+    "Uluslararası Bilim ve Fikir Festivalleri",
+    "Siyer-i Nebi Yarışması Türkiye 5.liği",
+    "eTwinning Kalite Etiketi",
+    "Siber Güvenlik ve TÜMOSAN proje çalışmaları"
+  ],
+  "projeler": "TÜBİTAK, Teknofest, Erasmus+, eTwinning, Sıfır Atık, ÇEDES, Öğrenci Meclisleri, Veli Akademileri ve sosyal sorumluluk projeleri.",
+  "rehberlik": {
+    "hizmetler": [
+      "YKS rehberliği", "LGS tercih danışmanlığı", "Psikososyal Destek",
+      "Bağımlılıkla Mücadele", "Siber Zorbalık ve Güvenli İnternet Kullanımı",
+      "Kariyer Planlama", "Verimli Ders Çalışma Yöntemleri"
+    ]
+  },
+  "haberler": [
+    { "baslik": "2 Nisan Otizm Farkındalık Günü", "tarih": "03-04-2026" },
+    { "baslik": "18 Mart Çanakkale Zaferi", "tarih": "29-03-2026" },
+    { "baslik": "ERASMUS+ Kısa Dönemli Hareketlilik Duyurusu", "tarih": "29-03-2026" }
+  ],
+  "duyurular": [
+    { "baslik": "ERASMUS+ Kısa Dönem Hareketliliği Duyurusu" },
+    { "baslik": "Zil Saatleri Sınav Haftası Düzenlemesi" },
+    { "baslik": "2. Dönem 1. Yazılı Sınav Takvimi Yayınlandı" }
+  ],
+  "etkinlikler": {
+    "geziler": [
+      "2024 - Eket Fuarı", "2024 - Eskişehir Gezisi", "2024 - Bursa Gezisi",
+      "2025 - Marmara Üniversitesi Gezisi", "2025 - İstanbul Turu",
+      "2026 - Kapadokya Üniversitesi Ziyareti"
+    ],
+    "kulupler": ["Sivil Savunma", "Bilişim", "Satranç", "Gezi", "eTwinning"],
+    "yarismalari": [
+      "Siyer-i Nebi Yarışması", "Bayrağı Yakala", "TÜBİTAK 4006",
+      "TEKDER Bir Fikir Bir Proje", "PESİAD Bilim Yarışması"
+    ]
+  }
+}

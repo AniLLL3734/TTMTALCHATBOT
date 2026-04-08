@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Pendik Türk Telekom Şehit Murat Mertel Mesleki ve Teknik Anadolu Lisesi AI Chatbot - Okul hakkında tüm sorularınızı yanıtlar">
+  <title>TT MTAL Chatbot - Yapay Zeka Asistanı</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+</head>
+<body>
+  <!-- Animated Background -->
+  <div class="bg-gradient"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- Error Toast -->
+  <div id="error-toast" class="error-toast">Bir hata oluştu, lütfen tekrar deneyin.</div>
+
+  <!-- App Container -->
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header" id="app-header">
+      <div class="header-logo">TT</div>
+      <div class="header-info">
+        <h1 class="header-title">Pendik TT MTAL Chatbot</h1>
+        <div class="header-subtitle">
+          <span class="status-dot"></span>
+          <span>AI Asistan — Çevrimiçi</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-icon" id="btn-clear" title="Sohbeti Temizle" aria-label="Sohbeti temizle">🗑️</button>
+        <button class="btn-icon" id="btn-info" title="Hakkında" aria-label="Hakkında bilgi">ℹ️</button>
+      </div>
+    </header>
+
+    <!-- Chat Area -->
+    <main class="chat-area" id="chat-area">
+      <!-- Welcome Card -->
+      <div class="welcome-card" id="welcome-card">
+        <div class="welcome-emoji">🎓</div>
+        <h2 class="welcome-title">Merhaba! Ben TT MTAL Asistanı</h2>
+        <p class="welcome-text">
+          Pendik Türk Telekom Şehit Murat Mertel Mesleki ve Teknik Anadolu Lisesi hakkında
+          her türlü sorunuzu yanıtlamak için buradayım. Aşağıdaki konulardan birini seçin
+          veya doğrudan sorunuzu yazın!
+        </p>
+
+        <div class="quick-questions" id="quick-questions">
+          <button class="quick-btn" data-question="Okul hakkında genel bilgi verir misin?">
+            <span class="icon">🏫</span>
+            <span>Okul Hakkında Bilgi</span>
+          </button>
+          <button class="quick-btn" data-question="Okulunuzda hangi bölümler var ve taban puanları nedir?">
+            <span class="icon">📚</span>
+            <span>Bölümler & Puanlar</span>
+          </button>
+          <button class="quick-btn" data-question="Okulun iletişim bilgileri ve adresi nedir?">
+            <span class="icon">📍</span>
+            <span>İletişim & Adres</span>
+          </button>
+          <button class="quick-btn" data-question="Okulun son haberleri ve etkinlikleri nelerdir?">
+            <span class="icon">📰</span>
+            <span>Haberler & Etkinlikler</span>
+          </button>
+          <button class="quick-btn" data-question="Kayıt şartları ve kontenjan bilgileri nelerdir?">
+            <span class="icon">📝</span>
+            <span>Kayıt & Kontenjan</span>
+          </button>
+          <button class="quick-btn" data-question="Okulun fiziki imkanları ve kulüpleri nelerdir?">
+            <span class="icon">🏆</span>
+            <span>İmkânlar & Kulüpler</span>
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-container">
+        <textarea
+          id="chat-input"
+          placeholder="Okul hakkında bir soru sorun..."
+          rows="1"
+          aria-label="Mesajınızı yazın"
+        ></textarea>
+        <button id="send-btn" title="Gönder" aria-label="Mesajı gönder">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="input-footer">
+        Yapay zeka destekli · <a href="https://turktelekomatl.meb.k12.tr" target="_blank" rel="noopener">turktelekomatl.meb.k12.tr</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="data/school_data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

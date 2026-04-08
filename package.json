@@ -1,0 +1,20 @@
+{
+  "name": "ttmtalchatbot",
+  "version": "1.0.0",
+  "description": "Pendik Türk Telekom MTAL AI Chatbot - Okul Web Sitesi Widget",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["chatbot", "okul", "meb", "ai"],
+  "author": "TT MTAL",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "node-fetch": "^3.3.2"
+  }
+}
