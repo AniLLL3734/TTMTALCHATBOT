@@ -12,7 +12,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Config ──
-const GROQ_API_KEY = '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';
+// Güvenlik için API anahtarını Environment Variables'tan çekiyoruz
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL = 'llama-3.3-70b-versatile';
 
