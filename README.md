@@ -41,27 +41,31 @@ node server.js
 
 ---
 
-## ☁️ Buluta Yükleme (Ücretsiz Koyeb Rehberi)
+## ☁️ Buluta Yükleme (Ücretsiz Render Rehberi)
 
-Projenin 7/24 uyumadan çalışması için Koyeb üzerinden ücretsiz yayınlayabilirsiniz:
+Projenizi kredi kartı gerektirmeden tamamen ücretsiz yayınlamak için en iyi platform **Render.com**'dur:
 
 1. Bu projeyi kendi GitHub hesabınıza yükleyin.
-2. [Koyeb.com](https://app.koyeb.com/) adresinden GitHub ile giriş yapın.
-3. **Deploy -> GitHub** diyerek bu projenin repository'sini seçin.
-4. **Environment Variables** (Ortam Değişkenleri) bölümüne gelin:
-   - Key: `GROQ_API_KEY`
-   - Value: `gsk_.....` (Groq API Anahtarınız)
-5. **Deploy** tuşuna basın. Size `https://sizin-projeniz.koyeb.app` şeklinde bir link verecektir.
+2. [Render.com](https://render.com/)'a gidip GitHub hesabınızla giriş yapın.
+3. Sağ üstten **"New" -> "Web Service"** seçeneğine tıklayın.
+4. "Build and deploy from a Git repository" seçeneğiyle bu deponuzu seçin.
+5. Ayarları şu şekilde doldurun:
+   - **Build Command:** `npm install`
+   - **Start Command:** `node server.js`
+   - **Environment Variables:** `GROQ_API_KEY` isimli bir değişken oluşturup karşısına API anahtarınızı yapıştırın.
+6. **"Create Web Service"** butonuna basın. Birkaç dakika içinde size `https://sizin-projeniz.onrender.com` şeklinde ücretsiz bir link verecektir.
+
+> 💡 **Uyku Modunu Engelleme (Önemli):** Render ücretsiz sürümde sitenizi 15 dakika boşta kalırsa uykuya alır. Bunu engellemek için ücretsiz [UptimeRobot](https://uptimerobot.com/)'a kayıt olup, Render'ın size verdiği adrese (Örn: `https://...onrender.com/api/scrape`) her 10 dakikada bir ping atacak bir monitör kurabilirsiniz. Böylece sunucunuz 7/24 uyanık kalır.
 
 ---
 
 ## 🏫 Okul Sitesine (MEB) Entegrasyon
 
-Koyeb linkinizi aldıktan sonra, MEB okul yönetim paneline (meb.k12.tr) girip **Şablon / Gelişmiş / Footer Kodları** kısmına şu satırı eklemeniz yeterlidir:
+Render linkinizi aldıktan sonra, MEB okul yönetim paneline (meb.k12.tr) girip **Şablon / Gelişmiş / Footer Kodları** kısmına şu satırı eklemeniz yeterlidir:
 
 ```html
 <!-- TT MTAL AI Chatbot -->
-<script src="https://SİZİN-KOYEB-LİNKİNİZ.koyeb.app/chatbot-widget.js"></script>
+<script src="https://SİZİN-RENDER-LİNKİNİZ.onrender.com/chatbot-widget.js"></script>
 ```
 
 *(Kodu eklediğiniz anda otonom sistem sunucunuzu bulup siteye botu yerleştirecektir.)*
