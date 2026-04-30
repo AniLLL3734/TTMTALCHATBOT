@@ -1,36 +1,46 @@
 // ============================================
-// TT MTAL CHATBOT — API SUNUCUSU v3
-// Akıllı context seçimi + Rate limit yönetimi
+// TT MTAL CHATBOT — MÜKEMMEL API SUNUCUSU v4
+// Akıllı Context + Dinamik Scraping + Hızlı Yanıt
 // ============================================
 
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { scrapeSchoolData, formatDataForAI, fetchPage, extractText } = require('./scraper');
+const fs = require('fs');
+const { scrapeSchoolData, formatDataForAI } = require('./scraper');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Config ──
-// Güvenlik için API anahtarını Environment Variables'tan çekiyoruz
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_API_KEY = process.env.GROQ_API_KEY || ''; // Ortam değişkeninden okur, yoksa fallback (GÜVENLİ SUNUCU TARAFI)
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL = 'llama-3.3-70b-versatile';
 
-// Cache
+// ── Cache Sistemi ──
 let cachedSchoolData = null;
-let cachedContextSections = null; // Bölümlere ayrılmış context
+let cachedContextSections = null;
 let lastScrapeTime = 0;
-const CACHE_DURATION = 30 * 60 * 1000;
+const CACHE_DURATION = 60 * 60 * 1000; // 1 Saat cache
 
-const STATIC_DATA = require('./data/school_data_static.json');
+// Sabit veriler (scraper yedeği olarak kullanılır)
+let STATIC_DATA;
+try {
+  STATIC_DATA = require('./data/school_data_static.json');
+} catch (e) {
+  console.error("⚠️ Statik veri dosyası bulunamadı, fallback işlemi uygulanamayabilir.");
+  STATIC_DATA = {};
+}
 
 // ── Middleware ──
-app.use(cors());
+app.use(cors({ origin: '*' })); // Tüm sitelerden (okul sitesi dahil) widget erişimine izin ver
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// ── Veriyi al ──
+// Statik dosyaları sun - HEM root dizini (app.js vb. için) HEM public dizinini
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/root', express.static(__dirname));
+
+// ── Veriyi Al & Hazırla ──
 async function getSchoolData() {
   const now = Date.now();
 
@@ -38,18 +48,19 @@ async function getSchoolData() {
     return cachedContextSections;
   }
 
-  console.log('🔄 Yeni veri çekiliyor...');
+  console.log('🔄 Yeni okul verileri çekiliyor...');
   try {
     cachedSchoolData = await scrapeSchoolData();
     cachedContextSections = buildContextSections(cachedSchoolData, STATIC_DATA);
     lastScrapeTime = now;
-    console.log(`✅ Veri güncellendi! (${Object.keys(cachedContextSections).length} bölüm)`);
+    console.log(`✅ Veriler başarıyla güncellendi! (${Object.keys(cachedContextSections).length} bölüm)`);
   } catch (err) {
-    console.error('❌ Scrape hatası:', err.message);
-    if (cachedContextSections) return cachedContextSections;
+    console.error('❌ Scrape hatası, yedek statik verilere dönülüyor:', err.message);
+    if (cachedContextSections) return cachedContextSections; // Eski veriyi kullan
 
+    // Scraper ilk başta çökerse statik dosya üzerinden mock oluştur
     cachedSchoolData = {
-      scraped_at: new Date().toISOString(), source: 'https://turktelekomatl.meb.k12.tr',
+      scraped_at: new Date().toISOString(), source: 'fallback',
       pages: {}, stats: STATIC_DATA.istatistikler || {},
       contact: STATIC_DATA.iletisim || {}, staff: [],
       news: STATIC_DATA.haberler || [], announcements: STATIC_DATA.duyurular || [],
@@ -64,151 +75,77 @@ async function getSchoolData() {
 
 // ══════════════════════════════════════════
 // AKILLI CONTEXT — Bölümlere ayır
-// Her soru için sadece ilgili bölümü gönder
 // ══════════════════════════════════════════
 function buildContextSections(scraped, stat) {
   const sections = {};
+  if (!stat.genel) return sections; // Güvenlik kontrolü
 
-  // 1. GENEL — her zaman gönderilecek temel bilgiler (kısa)
   sections.genel = `## OKUL
 - Ad: ${stat.genel.ad}
 - Konum: ${stat.genel.il}/${stat.genel.ilce}
 - Tür: ${stat.genel.tur}, ${stat.genel.ogretimTuru}
-- Süre: ${stat.genel.ogrenimSuresi}
 - Program: ${stat.genel.programlar}
-- Web: ${stat.genel.website}
-- Derslik: ${scraped.stats.derslikSayisi || stat.istatistikler.derslikSayisi}
-- Öğretmen: ${scraped.stats.ogretmenSayisi || stat.istatistikler.ogretmenSayisi}
-- Öğrenci: ${scraped.stats.ogrenciSayisi || stat.istatistikler.ogrenciSayisi}
-- Üniversiteye Yerleştirme: ${stat.istatistikler.ustOgrenimeYerlestirmeOrani}`;
+- Derslik: ${scraped.stats.derslikSayisi || stat.istatistikler.derslikSayisi || '?'}
+- Öğretmen: ${scraped.stats.ogretmenSayisi || stat.istatistikler.ogretmenSayisi || '?'}
+- Öğrenci: ${scraped.stats.ogrenciSayisi || stat.istatistikler.ogrenciSayisi || '?'}`;
 
-  // 2. İLETİŞİM
   sections.iletisim = `## İLETİŞİM
 - Adres: ${scraped.contact.adres || stat.iletisim.adres}
-- Telefon: ${scraped.contact.telefon || stat.iletisim.telefon}
-- Web: ${stat.iletisim.web}
-- Randevu: ${stat.iletisim.randevu}`;
+- Telefon: ${scraped.contact.telefon || stat.iletisim.telefon}`;
 
-  // 3. TARİHÇE
   sections.tarihce = `## TARİHÇE\n${stat.tarihce}`;
+  sections.bolum = `## ALAN/BÖLÜM (Bilişim Teknolojileri)\n${stat.alanVeDallar.aciklama}\nİş Alanları: ${stat.alanVeDallar.isAlanlari}`;
+  sections.kayit = `## KAYIT
+ATP Kontenjan: ${stat.kayitBilgileri.atp.kontenjan}, Taban Puan: ${stat.kayitBilgileri.atp.tabanPuani}
+AMP Kontenjan: ${stat.kayitBilgileri.amp.kontenjan}, Taban Puan: ${stat.kayitBilgileri.amp.tabanPuani}`;
 
-  // 4. ALAN & BÖLÜM
-  sections.bolum = `## ALAN VE DALLAR
-- Alan: ${stat.alanVeDallar.alan}
-- Dal: ${stat.alanVeDallar.dal}
-- ${stat.alanVeDallar.aciklama}
-- İş Alanları: ${stat.alanVeDallar.isAlanlari}
-- Neden Tercih: ${stat.alanVeDallar.nedenTercihEtmeliyim}`;
-
-  // 5. KAYIT
-  sections.kayit = `## KAYIT BİLGİLERİ
-### ATP: Kontenjan ${stat.kayitBilgileri.atp.kontenjan}, Taban ${stat.kayitBilgileri.atp.tabanPuani}, Dilim ${stat.kayitBilgileri.atp.yuzdelikDilim}, LGS puanı ile
-- Staj: ${stat.kayitBilgileri.atp.staj}
-### AMP: Kontenjan ${stat.kayitBilgileri.amp.kontenjan}, Taban ${stat.kayitBilgileri.amp.tabanPuani}, Diploma puanı ile
-- Staj: ${stat.kayitBilgileri.amp.staj}
-- Proje okulu değildir.`;
-
-  // 6. KADRO — Tüm personel
   if (scraped.staff && scraped.staff.length > 0) {
     const groups = {};
     scraped.staff.forEach(s => {
       if (!groups[s.brans]) groups[s.brans] = [];
       groups[s.brans].push(s.ad);
     });
-
-    let kadroText = '## OKUL KADROSU — TÜM PERSONEL\n';
+    let kadroText = '## OKUL KADROSU\n';
     for (const [branch, names] of Object.entries(groups)) {
       kadroText += `### ${branch}\n${names.map(n => `- ${n}`).join('\n')}\n`;
     }
     sections.kadro = kadroText;
   }
 
-  // 7. FİZİKİ İMKÂNLAR
-  sections.fiziki = `## FİZİKİ İMKÂNLAR
-${stat.fizikiImkanlar.map(f => `- ${f}`).join('\n')}
-- Kıyafet: ${stat.kiyafet}
-- Burs: ${stat.burs}
-- Yurt: ${stat.yurt}
-- Servis: ${stat.servis}
-- DYK: ${stat.dyk}`;
+  sections.fiziki = `## İMKÂNLAR\n${stat.fizikiImkanlar.join(', ')}\nKıyafet: ${stat.kiyafet}`;
 
-  // 8. BAŞARILAR & PROJELER
-  sections.basarilar = `## BAŞARILAR
-${stat.basarilar.map(b => `- ${b}`).join('\n')}
-## PROJELER
-${stat.projeler}`;
-
-  // 9. HABERLER & DUYURULAR
-  let haberText = '## SON HABERLER\n';
+  let haberText = '## HABERLER & DUYURULAR\n';
   if (scraped.news.length > 0) {
-    scraped.news.slice(0, 15).forEach(n => {
-      haberText += `- ${n.tarih ? '[' + n.tarih + '] ' : ''}${n.baslik}\n`;
-    });
+    scraped.news.slice(0, 10).forEach(n => haberText += `- [Haber] ${n.baslik}\n`);
   }
   if (scraped.announcements.length > 0) {
-    haberText += '\n## DUYURULAR\n';
-    scraped.announcements.slice(0, 10).forEach(d => {
-      haberText += `- ${d.baslik}\n`;
-    });
+    scraped.announcements.slice(0, 5).forEach(d => haberText += `- [Duyuru] ${d.baslik}\n`);
   }
   sections.haberler = haberText;
 
-  // 10. ETKİNLİKLER
-  sections.etkinlikler = `## ETKİNLİKLER
-### Geziler\n${stat.etkinlikler.geziler.map(g => `- ${g}`).join('\n')}
-### Kulüpler\n${stat.etkinlikler.kulupler.map(k => `- ${k}`).join('\n')}
-### Yarışmalar\n${stat.etkinlikler.yarismalari.map(y => `- ${y}`).join('\n')}`;
-
-  // 11. REHBERLİK
-  sections.rehberlik = `## REHBERLİK
-${stat.rehberlik.hizmetler.map(h => `- ${h}`).join('\n')}`;
-
-  // 12. SSS & Ek içerikler
-  if (scraped.pages.sss) {
-    sections.sss = `## SIKÇA SORULAN SORULAR\n${scraped.pages.sss.content.substring(0, 3000)}`;
-  }
-
-  // 13. Ek taranan sayfalar
-  if (scraped.additionalContent && scraped.additionalContent.length > 0) {
-    let ekText = '## EK İÇERİKLER\n';
-    scraped.additionalContent.forEach(ac => {
-      ekText += `### ${ac.title}\n${ac.content.substring(0, 1500)}\n`;
-    });
-    sections.ekIcerik = ekText;
-  }
+  if (scraped.pages.sss) sections.sss = `## SSS\n${scraped.pages.sss.content.substring(0, 2000)}`;
 
   return sections;
 }
 
-// ══════════════════════════════════════════
-// SORUYA GÖRE İLGİLİ BÖLÜMLERİ SEÇ
-// Token tasarrufu için sadece gerekli veriyi gönder
-// ══════════════════════════════════════════
+// Soruya göre en alakalı bağlamı seç
 function selectRelevantSections(question, allSections) {
   const q = question.toLowerCase();
+  const selected = [allSections.genel, allSections.iletisim]; // Her zaman dahil
 
-  // Her zaman gönder
-  const selected = [allSections.genel, allSections.iletisim];
-
-  // Keyword-section eşleştirme tablosu
   const mappings = [
-    { keywords: /kadro|öğretmen|hoca|personel|müdür|idari|kimler|teşkilat|isim/, section: 'kadro' },
-    { keywords: /tarih|kuruluş|açılış|geçmiş|nasıl kurulmuş/, section: 'tarihce' },
-    { keywords: /bölüm|alan|dal|bilişim|yazılım|ders|müfredat|ne öğren/, section: 'bolum' },
-    { keywords: /kayıt|puan|taban|kontenjan|başvur|lgs|atp|amp|tercih|giriş/, section: 'kayit' },
-    { keywords: /fizik|kütüphane|lab|yemekhane|tesis|imkan|salon|bina|mekan/, section: 'fiziki' },
-    { keywords: /başarı|ödül|yarışma|derece|proje|tübitak|erasmus|teknofest/, section: 'basarilar' },
-    { keywords: /haber|duyuru|son gelişme|yeni|etkinlik|ne oldu/, section: 'haberler' },
-    { keywords: /etkinlik|gezi|kulüp|spor|seminer|tören/, section: 'etkinlikler' },
-    { keywords: /rehberlik|psikolojik|destek|yks|bağımlılık|siber/, section: 'rehberlik' },
-    { keywords: /sss|sık sorulan|staj|kıyafet|burs|yurt|servis|pansiyon|dyk/, section: 'sss' },
-    { keywords: /kıyafet|üniforma|giyim/, section: 'fiziki' },
-    { keywords: /staj|işletme|beceri sınavı/, section: 'kayit' },
+    { keys: ['kadro', 'öğretmen', 'hoca', 'müdür', 'personel', 'isim'], section: 'kadro' },
+    { keys: ['tarih', 'kuruluş', 'geçmiş'], section: 'tarihce' },
+    { keys: ['bölüm', 'alan', 'dal', 'bilişim', 'yazılım'], section: 'bolum' },
+    { keys: ['kayıt', 'puan', 'taban', 'kontenjan', 'lgs', 'atp', 'amp'], section: 'kayit' },
+    { keys: ['fiziki', 'kütüphane', 'lab', 'imkan', 'kıyafet', 'yemek'], section: 'fiziki' },
+    { keys: ['haber', 'duyuru', 'etkinlik', 'yeni'], section: 'haberler' },
+    { keys: ['soru', 'staj', 'burs', 'yurt', 'servis'], section: 'sss' }
   ];
 
   let matched = false;
   for (const map of mappings) {
-    if (q.match(map.keywords) && allSections[map.section]) {
+    if (map.keys.some(k => q.includes(k)) && allSections[map.section]) {
       if (!selected.includes(allSections[map.section])) {
         selected.push(allSections[map.section]);
         matched = true;
@@ -216,30 +153,27 @@ function selectRelevantSections(question, allSections) {
     }
   }
 
-  // Eşleşme yoksa — genel soru, temel bölümleri ekle
+  // Eşleşme yoksa genel bilgileri daha zengin ver
   if (!matched) {
     if (allSections.bolum) selected.push(allSections.bolum);
     if (allSections.kayit) selected.push(allSections.kayit);
-    if (allSections.fiziki) selected.push(allSections.fiziki);
-    if (allSections.basarilar) selected.push(allSections.basarilar);
+    if (allSections.haberler) selected.push(allSections.haberler);
   }
 
   return selected.join('\n\n');
 }
 
-// ── System Prompt (kısa) ──
+// ── System Prompt ──
 const SYSTEM_BASE = `Sen "TT MTAL Asistanı"sın. Pendik Türk Telekom Şehit Murat Mertel Mesleki ve Teknik Anadolu Lisesi'nin resmi AI chatbot'usun.
-
+GÖREV: Öğrenci ve velilere okul hakkında kesin ve doğru bilgi vermek.
 KURALLAR:
-- Türkçe yanıt ver, kibar ve profesyonel ol
-- Bilgi tabanındaki verilere dayanarak cevap ver
-- Kadro sorularında tüm personeli branşlarına göre listele
-- Bilmediğin konularda: "Bu konuda bilgim yok, okul idaresini arayın: (216) 379 0410" de
-- Okul dışı konularda yanıt verme
-- Kısa, öz, madde işaretli yanıtlar ver
-- Emoji kullan`;
+1. SADECE aşağıdaki BİLGİ TABANI'nı kullanarak cevap ver. Uydurma.
+2. Bilgi tabanında yoksa "Bu konuda net bir bilgim yok, lütfen okulu arayın: (216) 379 0410" de.
+3. Sorulara MÜKEMMEL bir formatta, madde işaretli, kısa, öz ve anlaşılır yanıtlar ver. Emoji kullan.
+4. Okul dışı konulara (siyaset vb.) cevap verme.
+5. Kullanıcı selam verirse sıcak ve samimi karşıla.`;
 
-// ── Groq API çağrısı (retry ile) ──
+// ── Groq API İstek Motoru ──
 async function callGroqAPI(messages, retryCount = 0) {
   try {
     const response = await fetch(GROQ_API_URL, {
@@ -251,131 +185,87 @@ async function callGroqAPI(messages, retryCount = 0) {
       body: JSON.stringify({
         model: MODEL,
         messages: messages,
-        temperature: 0.7,
-        max_tokens: 1024,
+        temperature: 0.5, // Daha net ve tutarlı cevaplar için düşürüldü
+        max_tokens: 800,
         stream: false
       })
     });
 
-    // Rate limit → bekle ve tekrar dene
-    if (response.status === 429 && retryCount < 3) {
-      const retryAfter = response.headers.get('retry-after');
-      const waitTime = retryAfter ? parseFloat(retryAfter) * 1000 : (retryCount + 1) * 15000;
-      console.log(`⏳ Rate limit! ${Math.ceil(waitTime / 1000)}s bekleniyor... (deneme ${retryCount + 1}/3)`);
-      await new Promise(r => setTimeout(r, waitTime));
+    if (response.status === 429 && retryCount < 2) {
+      console.log(`⏳ Rate limit! Bekleniyor... (deneme ${retryCount + 1})`);
+      await new Promise(r => setTimeout(r, 5000));
       return callGroqAPI(messages, retryCount + 1);
     }
 
     if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.error?.message || `API ${response.status}`);
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API ${response.status}`);
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || 'Yanıt üretilemedi.';
-
+    return data.choices[0].message.content;
   } catch (err) {
-    if (retryCount < 2 && err.message.includes('rate_limit')) {
-      console.log(`⏳ Rate limit retry ${retryCount + 1}...`);
-      await new Promise(r => setTimeout(r, 15000));
-      return callGroqAPI(messages, retryCount + 1);
-    }
     throw err;
   }
 }
 
 // ══════════════════════════════════
-// API ENDPOINTS
+// API ENDPOINT'LERİ
 // ══════════════════════════════════
 
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, history = [] } = req.body;
-    if (!message || !message.trim()) {
-      return res.status(400).json({ error: 'Mesaj boş olamaz.' });
-    }
+    if (!message || !message.trim()) return res.status(400).json({ error: 'Mesaj boş.' });
 
-    // Bölümlenmiş veriyi al
     const sections = await getSchoolData();
-
-    // Soruya göre sadece ilgili bölümleri seç
     const relevantContext = selectRelevantSections(message, sections);
-
-    console.log(`💬 Soru: "${message.substring(0, 60)}..." → Context: ${relevantContext.length} karakter`);
 
     const messages = [
       { role: 'system', content: SYSTEM_BASE + '\n\nBİLGİ TABANI:\n' + relevantContext },
-      ...history.slice(-6), // Son 6 mesaj (token tasarrufu)
+      ...history,
       { role: 'user', content: message }
     ];
 
     const reply = await callGroqAPI(messages);
-
-    res.json({ reply, model: MODEL, cached: true });
-
+    res.json({ reply });
   } catch (err) {
     console.error('Chat error:', err.message);
-
-    if (err.message.includes('rate_limit') || err.message.includes('429')) {
-      return res.status(429).json({
-        error: 'Çok hızlı mesaj gönderiyorsunuz. Lütfen 15 saniye bekleyip tekrar deneyin. ⏳'
-      });
+    let errMsg = 'Sunucu yoğun veya hata oluştu. Lütfen tekrar deneyin.';
+    if (err.message.includes('Invalid API Key') || err.message.includes('invalid_api_key') || err.message.includes('401')) {
+      errMsg = 'Groq API Anahtarınız geçersiz (Invalid API Key). Lütfen geçerli bir anahtar girin.';
     }
-
-    res.status(500).json({ error: 'Sunucu hatası. Lütfen tekrar deneyin.' });
+    res.status(500).json({ error: errMsg, details: err.message, stack: err.stack });
   }
 });
 
-// Manuel scrape
 app.get('/api/scrape', async (req, res) => {
   try {
-    lastScrapeTime = 0;
+    lastScrapeTime = 0; // Cache temizle
     await getSchoolData();
-    res.json({
-      success: true,
-      scraped_at: new Date(lastScrapeTime).toISOString(),
-      pages: cachedSchoolData ? Object.keys(cachedSchoolData.pages).length : 0,
-      staff: cachedSchoolData ? cachedSchoolData.staff.length : 0,
-      sections: cachedContextSections ? Object.keys(cachedContextSections).length : 0
-    });
+    res.json({ success: true, message: 'Veriler başarıyla güncellendi!' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Status
-app.get('/api/status', (req, res) => {
-  res.json({
-    status: 'online',
-    last_scrape: lastScrapeTime ? new Date(lastScrapeTime).toISOString() : null,
-    cache_valid: (Date.now() - lastScrapeTime) < CACHE_DURATION && lastScrapeTime > 0,
-    staff_count: cachedSchoolData ? cachedSchoolData.staff.length : 0,
-    sections: cachedContextSections ? Object.keys(cachedContextSections).length : 0,
-    uptime: process.uptime()
-  });
+// Full Ekran Standalone Arayüz
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Data
-app.get('/api/data', async (req, res) => {
-  await getSchoolData();
-  res.json({
-    scraped_data: cachedSchoolData,
-    sections: cachedContextSections ? Object.keys(cachedContextSections) : []
-  });
-});
-
-// Fallback
+// Demo Widget Sayfası
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ── Start ──
+// ── Sunucu Başlatma ──
 app.listen(PORT, () => {
-  console.log(`\n🚀 TT MTAL Chatbot API v3 — Akıllı Context`);
-  console.log(`   📍 http://localhost:${PORT}`);
-  console.log(`   📡 Chat: POST /api/chat`);
-  console.log(`   🔄 Scrape: GET /api/scrape`);
-  console.log(`\n   🌐 Widget: <script src="http://localhost:${PORT}/chatbot-widget.js"></script>\n`);
+  console.log(`\n🚀 TT MTAL Chatbot API v4 Başladı!`);
+  console.log(`   📍 Sunucu Adresi : http://localhost:${PORT}`);
+  console.log(`   💻 Tam Ekran Uyg : http://localhost:${PORT}/app`);
+  console.log(`   🌐 Widget Demo   : http://localhost:${PORT}/`);
 
-  getSchoolData().catch(err => console.error('İlk scrape hatası:', err.message));
+  // İlk veri çekimini asenkron başlat
+  getSchoolData().catch(e => console.error("İlk çekim hatası:", e));
 });

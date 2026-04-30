@@ -1,11 +1,12 @@
 // ============================================
 // PENDIK TÜRK TELEKOM MTAL - AI CHATBOT
-// Groq API Integration + Chat Engine
+// Frontend App - Local Sunucu Bağlantısı v4
 // ============================================
 
-const GROQ_API_KEY = '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';
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'llama-3.3-70b-versatile';
+// Sunucu URL'si (Geliştirme için localhost, prod için gerçek URL)
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+  ? `http://${window.location.host}/api/chat`
+  : '/api/chat';
 
 // ── DOM Elements ──
 const chatArea = document.getElementById('chat-area');
@@ -21,79 +22,62 @@ const errorToast = document.getElementById('error-toast');
 let conversationHistory = [];
 let isProcessing = false;
 
-// ── System Prompt ──
-const SYSTEM_PROMPT = `Sen, Pendik Türk Telekom Şehit Murat Mertel Mesleki ve Teknik Anadolu Lisesi'nin resmi yapay zeka asistanısın. Adın "TT MTAL Asistanı".
-
-GÖREV:
-- Okul hakkında sorulan her türlü soruyu aşağıdaki bilgi tabanını kullanarak doğru ve detaylı şekilde yanıtla.
-- Yanıtlarını Türkçe ver.
-- Kibar, samimi ve profesyonel bir dil kullan.
-- Bilgi tabanında bulunmayan konularda "Bu konuda elimde bilgi bulunmuyor, daha fazla bilgi için okul idaresi ile iletişime geçmenizi öneriyorum. Telefon: (216) 379 0410" şeklinde yönlendir.
-- Yanıtlarını düzenli ve okunabilir şekilde formatla (madde işaretleri, başlıklar vb. kullan).
-- Okul dışı konularda (siyaset, din tartışmaları vb.) yanıt verme, nazikçe konuyu okula yönlendir.
-
-BİLGİ TABANI:
-${getSchoolContext()}
-
-ÖNEMLİ KURALLAR:
-1. Sadece yukarıdaki bilgi tabanındaki verilere dayanarak cevap ver.
-2. Bilmediğin bir şey sorulursa "Bu konuda elimde detaylı bilgi yok" de ve okul yönetimini yönlendir.
-3. Her zaman yardımsever ve pozitif ol.
-4. Cevaplarını çok uzun tutma, öz ve anlaşılır ol.
-5. Gerektiğinde emoji kullanarak cevaplarını zenginleştir.`;
-
 // ── Initialize ──
 function init() {
   // Quick question buttons
-  quickQuestions.addEventListener('click', (e) => {
-    const btn = e.target.closest('.quick-btn');
-    if (btn) {
-      const question = btn.dataset.question;
-      sendMessage(question);
-    }
-  });
+  if (quickQuestions) {
+    quickQuestions.addEventListener('click', (e) => {
+      const btn = e.target.closest('.quick-btn');
+      if (btn) {
+        const question = btn.dataset.question;
+        sendMessage(question);
+      }
+    });
+  }
 
   // Send button
-  sendBtn.addEventListener('click', () => {
-    const msg = chatInput.value.trim();
-    if (msg) sendMessage(msg);
-  });
-
-  // Enter key (Shift+Enter for new line)
-  chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
+  if (sendBtn) {
+    sendBtn.addEventListener('click', () => {
       const msg = chatInput.value.trim();
       if (msg) sendMessage(msg);
-    }
-  });
+    });
+  }
 
-  // Auto-resize textarea
-  chatInput.addEventListener('input', () => {
-    chatInput.style.height = '44px';
-    chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
-  });
+  // Enter key (Shift+Enter for new line)
+  if (chatInput) {
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const msg = chatInput.value.trim();
+        if (msg) sendMessage(msg);
+      }
+    });
+
+    // Auto-resize textarea
+    chatInput.addEventListener('input', () => {
+      chatInput.style.height = '44px';
+      chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+    });
+  }
 
   // Clear chat
-  btnClear.addEventListener('click', clearChat);
+  if (btnClear) btnClear.addEventListener('click', clearChat);
 
   // Info button
-  btnInfo.addEventListener('click', showInfo);
+  if (btnInfo) btnInfo.addEventListener('click', showInfo);
 
   // Focus input
-  chatInput.focus();
+  if (chatInput) chatInput.focus();
 }
 
 // ── Send Message ──
 async function sendMessage(text) {
   if (isProcessing || !text.trim()) return;
   isProcessing = true;
-  sendBtn.disabled = true;
+  if (sendBtn) sendBtn.disabled = true;
 
   // Hide welcome card
-  if (welcomeCard) {
-    welcomeCard.style.display = 'none';
-  }
+  if (welcomeCard) welcomeCard.style.display = 'none';
 
   // Add user message
   appendMessage('user', text);
@@ -107,35 +91,24 @@ async function sendMessage(text) {
   const typingEl = showTypingIndicator();
 
   try {
-    // Build messages array
-    const messages = [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...conversationHistory.slice(-10) // Last 10 messages for context
-    ];
-
-    // Call Groq API
-    const response = await fetch(GROQ_API_URL, {
+    // ⚠️ KRİTİK DEĞİŞİKLİK: Doğrudan Groq yerine KENDİ Sunucumuza istek atıyoruz.
+    // Bu sayede API Key ifşası engelleniyor ve akıllı veritabanı taraması çalışıyor.
+    const response = await fetch(API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: MODEL,
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 1024,
-        stream: false
+        message: text,
+        history: conversationHistory.slice(-6) // Son 6 mesaj bağlam için
       })
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.error?.message || `API hatası: ${response.status}`);
+      throw new Error(data.error || \`API Hatası: \${response.status}\`);
     }
 
-    const data = await response.json();
-    const botReply = data.choices?.[0]?.message?.content || 'Üzgünüm, yanıt üretilirken bir sorun oluştu.';
+    const botReply = data.reply || 'Yanıt üretilemedi.';
 
     // Remove typing indicator
     removeTypingIndicator(typingEl);
@@ -147,23 +120,21 @@ async function sendMessage(text) {
     conversationHistory.push({ role: 'assistant', content: botReply });
 
   } catch (error) {
-    console.error('Groq API Error:', error);
+    console.error('Chat Error:', error);
     removeTypingIndicator(typingEl);
     
     let errorMsg = 'Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.';
-    if (error.message.includes('401')) {
-      errorMsg = 'API anahtarı geçersiz. Lütfen yönetici ile iletişime geçin.';
-    } else if (error.message.includes('429')) {
-      errorMsg = 'Çok fazla istek gönderildi. Lütfen birkaç saniye bekleyip tekrar deneyin.';
+    if (error.message.includes('Çok hızlı')) {
+      errorMsg = error.message; // Sunucudan gelen rate limit mesajını göster
     } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
       errorMsg = 'İnternet bağlantınızı kontrol edin ve tekrar deneyin.';
     }
     
-    appendMessage('bot', `⚠️ ${errorMsg}`);
+    appendMessage('bot', \`⚠️ \${errorMsg}\`);
     showError(errorMsg);
   } finally {
     isProcessing = false;
-    sendBtn.disabled = false;
+    if (sendBtn) sendBtn.disabled = false;
     chatInput.focus();
   }
 }
@@ -171,21 +142,21 @@ async function sendMessage(text) {
 // ── Append Message to Chat ──
 function appendMessage(role, content) {
   const messageDiv = document.createElement('div');
-  messageDiv.className = `message message-${role}`;
+  messageDiv.className = \`message message-\${role}\`;
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
-  const avatarContent = role === 'bot' ? '🤖' : '👤';
+  const avatarContent = role === 'bot' ? '🎓' : '👤'; // Bot emojisini şapka yaptık
   const formattedContent = role === 'bot' ? formatBotMessage(content) : escapeHtml(content);
 
-  messageDiv.innerHTML = `
-    <div class="message-avatar">${avatarContent}</div>
+  messageDiv.innerHTML = \`
+    <div class="message-avatar">\${avatarContent}</div>
     <div>
-      <div class="message-content">${formattedContent}</div>
-      <div class="message-time">${timeStr}</div>
+      <div class="message-content">\${formattedContent}</div>
+      <div class="message-time">\${timeStr}</div>
     </div>
-  `;
+  \`;
 
   chatArea.appendChild(messageDiv);
   scrollToBottom();
@@ -193,41 +164,26 @@ function appendMessage(role, content) {
 
 // ── Format Bot Message (Markdown-like) ──
 function formatBotMessage(text) {
-  // Escape HTML first
   let formatted = escapeHtml(text);
 
-  // Bold: **text** or __text__
-  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  formatted = formatted.replace(/__(.*?)__/g, '<strong>$1</strong>');
-
-  // Italic: *text* or _text_
-  formatted = formatted.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
-
-  // Bullet points: lines starting with - or •
-  formatted = formatted.replace(/^[\-•]\s+(.+)$/gm, '<li>$1</li>');
-  formatted = formatted.replace(/(<li>.*<\/li>\n?)+/gs, (match) => `<ul>${match}</ul>`);
-
-  // Numbered lists: lines starting with 1. 2. etc
-  formatted = formatted.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+  // Bold: **text**
+  formatted = formatted.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');
+  
+  // Bullet points
+  formatted = formatted.replace(/^[\\-•]\\s+(.+)$/gm, '<li>$1</li>');
+  formatted = formatted.replace(/(<li>.*<\\/li>\\n?)+/gs, (match) => \`<ul>\${match}</ul>\`);
 
   // Headers: ### text
-  formatted = formatted.replace(/^###\s+(.+)$/gm, '<strong style="font-size:1em;color:#a5b4fc;display:block;margin:8px 0 4px;">$1</strong>');
-  formatted = formatted.replace(/^##\s+(.+)$/gm, '<strong style="font-size:1.05em;color:#818cf8;display:block;margin:10px 0 4px;">$1</strong>');
-
-  // Code inline: `text`
-  formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+  formatted = formatted.replace(/^###\\s+(.+)$/gm, '<strong style="font-size:1em;color:#a5b4fc;display:block;margin:8px 0 4px;">$1</strong>');
+  formatted = formatted.replace(/^##\\s+(.+)$/gm, '<strong style="font-size:1.05em;color:#818cf8;display:block;margin:10px 0 4px;">$1</strong>');
 
   // Line breaks
-  formatted = formatted.replace(/\n\n/g, '</p><p>');
-  formatted = formatted.replace(/\n/g, '<br>');
+  formatted = formatted.replace(/\\n\\n/g, '</p><p>');
+  formatted = formatted.replace(/\\n/g, '<br>');
 
-  // Wrap in paragraph
-  formatted = `<p>${formatted}</p>`;
+  formatted = \`<p>\${formatted}</p>\`;
+  formatted = formatted.replace(/<p>\\s*<\\/p>/g, '');
 
-  // Clean up empty paragraphs
-  formatted = formatted.replace(/<p>\s*<\/p>/g, '');
-
-  // Emojis: ensure they render properly
   return formatted;
 }
 
@@ -243,14 +199,12 @@ function showTypingIndicator() {
   const typingDiv = document.createElement('div');
   typingDiv.className = 'typing-indicator';
   typingDiv.id = 'typing-indicator';
-  typingDiv.innerHTML = `
+  typingDiv.innerHTML = \`
     <div class="message-avatar" style="background: linear-gradient(135deg, var(--primary-600), var(--accent-500)); color: white; box-shadow: 0 4px 12px rgba(99,102,241,0.3);">🤖</div>
     <div class="typing-dots">
-      <span></span>
-      <span></span>
-      <span></span>
+      <span></span><span></span><span></span>
     </div>
-  `;
+  \`;
   chatArea.appendChild(typingDiv);
   scrollToBottom();
   return typingDiv;
@@ -272,16 +226,10 @@ function scrollToBottom() {
 // ── Clear Chat ──
 function clearChat() {
   conversationHistory = [];
-  
-  // Remove all messages and typing indicators
   const messages = chatArea.querySelectorAll('.message, .typing-indicator');
   messages.forEach(m => m.remove());
 
-  // Show welcome card
-  if (welcomeCard) {
-    welcomeCard.style.display = '';
-  }
-
+  if (welcomeCard) welcomeCard.style.display = '';
   chatInput.value = '';
   chatInput.style.height = '44px';
   chatInput.focus();
@@ -292,23 +240,22 @@ function showInfo() {
   const infoExists = document.getElementById('info-message');
   if (infoExists) return;
 
-  if (welcomeCard) {
-    welcomeCard.style.display = 'none';
-  }
+  if (welcomeCard) welcomeCard.style.display = 'none';
 
-  appendMessage('bot', `ℹ️ **TT MTAL Chatbot Hakkında**
+  appendMessage('bot', \`ℹ️ **TT MTAL Chatbot Hakkında**
 
-Bu chatbot, **Pendik Türk Telekom Şehit Murat Mertel Mesleki ve Teknik Anadolu Lisesi** hakkında bilgi sağlamak amacıyla geliştirilmiştir.
+Bu chatbot, **Pendik Türk Telekom Şehit Murat Mertel Mesleki ve Teknik Anadolu Lisesi** hakkında bilgi sağlamak amacıyla geliştirilmiştir. Veriler arka planda okul sitesinden otomatik güncellenmektedir.
 
 - 🤖 **Yapay Zeka:** Groq LLM API (Llama 3.3)
 - 📊 **Veri Kaynağı:** turktelekomatl.meb.k12.tr
-- 🔄 **Son Güncelleme:** Nisan 2026
+- 🔒 **Güvenlik:** Arka plan sunucu mimarisi korumalıdır.
 
-Okulumuz hakkında her türlü sorunuzu sorabilirsiniz!`);
+Okulumuz hakkında her türlü sorunuzu sorabilirsiniz!\`);
 }
 
 // ── Show Error Toast ──
 function showError(msg) {
+  if (!errorToast) return;
   errorToast.textContent = msg;
   errorToast.classList.add('show');
   setTimeout(() => {

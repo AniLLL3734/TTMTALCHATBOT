@@ -1,6 +1,6 @@
 // ============================================
-// OKUL WEB SİTESİ SCRAPER v2
-// turktelekomatl.meb.k12.tr - TÜM SAYFALARI ÇEK
+// OKUL WEB SİTESİ SCRAPER v3 (Mükemmelleştirilmiş)
+// turktelekomatl.meb.k12.tr - Akıllı ve Hızlı Tarama
 // ============================================
 
 const cheerio = require('cheerio');
@@ -39,12 +39,12 @@ const PAGES_TO_SCRAPE = [
   { url: '/icerikler/icerikler/listele_91852_Duyurular', category: 'duyurular', label: 'Duyurular' },
   
   // Site haritası (tüm linkleri keşfetmek için)
-  { url: '/tema/siteharitasi.php', category: 'siteharitasi', label: 'Site Haritası' },
+  { url: '/tema/siteharitasi.php', category: 'siteharitasi', label: 'Site Haritası' }
 ];
 
 // Fetch with timeout and retry
-async function fetchPage(url, retries = 2) {
-  for (let i = 0; i <= retries; i++) {
+async function fetchPage(url, retries = 3) {
+  for (let i = 0; i < retries; i++) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
@@ -52,9 +52,10 @@ async function fetchPage(url, retries = 2) {
       const response = await fetch(url, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml',
-          'Accept-Language': 'tr-TR,tr;q=0.9'
+          'Accept-Language': 'tr-TR,tr;q=0.9',
+          'Cache-Control': 'no-cache'
         }
       });
       
@@ -62,22 +63,26 @@ async function fetchPage(url, retries = 2) {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return await response.text();
     } catch (err) {
-      if (i === retries) {
+      if (i === retries - 1) {
         console.error(`  ✗ Çekilemedi: ${url} - ${err.message}`);
         return null;
       }
-      await new Promise(r => setTimeout(r, 1000));
+      await new Promise(r => setTimeout(r, 1000 * (i + 1))); // Exponential backoff
     }
   }
 }
 
 // HTML'den temiz metin çıkar
 function extractText(html) {
+  if (!html) return '';
   const $ = cheerio.load(html);
-  $('script, style, nav, link, meta, noscript, iframe').remove();
+  
+  // Gereksiz etiketleri kaldırarak metin karmaşasını önle
+  $('script, style, nav, header, footer, link, meta, noscript, iframe, .sidebar, .menu').remove();
   
   let content = '';
-  const selectors = ['.icerik-detay', '.icerik', '#icerik', '.content', '#content', 'article', 'main', '.container'];
+  // MEB standart sitelerindeki olası içerik div'leri
+  const selectors = ['.icerik-detay', '.icerik', '#icerik', '.content', '#content', 'article', 'main', '.container', '.page-content'];
   
   for (const sel of selectors) {
     const el = $(sel);
@@ -89,36 +94,43 @@ function extractText(html) {
   
   if (!content) content = $('body').text();
   
-  return content.replace(/\s+/g, ' ').replace(/\n\s*\n/g, '\n').trim();
+  // Metni temizle ve normalize et
+  return content
+    .replace(/\s+/g, ' ')
+    .replace(/\n\s*\n/g, '\n')
+    .replace(/<[^>]*>?/gm, '') // Her ihtimale karşı kalan HTML etiketlerini sil
+    .trim();
 }
 
 // ══════════════════════════════════
 // KADRO ÇEKME — Öğretmen listesi
 // ══════════════════════════════════
 function extractStaff(html) {
+  if (!html) return [];
   const $ = cheerio.load(html);
   const staff = [];
   const seen = new Set();
   
-  // Kadro sayfasındaki tüm personel linklerini çek (href içinde idari_personel geçenler)
+  // Kadro sayfasındaki tüm personel linklerini çek
   $('a[href*="idari_personel"]').each((_, el) => {
     const text = $(el).text().trim();
     if (!text || text.length < 3) return;
     
-    // İsim ve branşı ayır — MEB format: "İsim SoyadBranş"
+    // İsim ve branşı ayır
     let name = '';
-    let branch = '';
+    let branch = 'Öğretmen'; // Default
     
     // Ortak branş isimleri
     const branches = [
-      'Okul Müdürü', 'Müdür Yardımcısı', 'Memur',
-      'Bilişim Teknolojileri Alan Şefi', 'Bilişim Teknolojileri',
-      'Rehberlik Öğretmeni', 'Biyoloji Öğretmeni',
-      'Türk Dili ve Edebiyatı Öğretmeni', 'Matematik Öğretmeni',
-      'İngilizce Öğretmeni', 'Coğrafya Öğretmeni', 'Tarih Öğretmeni',
-      'Kimya Öğretmeni', 'Müzik Öğretmeni', 'Beden Eğitimi Öğretmeni',
-      'Din Kültürü ve Ahlak Bilgisi Öğretmeni', 'Fizik Öğretmeni',
-      'Felsefe Öğretmeni'
+      'Okul Müdürü', 'Müdür Yardımcısı', 'Müdür Başyardımcısı', 'Memur', 'Hizmetli',
+      'Bilişim Teknolojileri Alan Şefi', 'Bilişim Teknolojileri Atölye Şefi', 'Bilişim Teknolojileri',
+      'Rehberlik Öğretmeni', 'Rehberlik', 'Psikolojik Danışman',
+      'Biyoloji Öğretmeni', 'Biyoloji', 'Türk Dili ve Edebiyatı Öğretmeni', 'Türk Dili ve Edebiyatı',
+      'Matematik Öğretmeni', 'Matematik', 'İngilizce Öğretmeni', 'İngilizce',
+      'Coğrafya Öğretmeni', 'Coğrafya', 'Tarih Öğretmeni', 'Tarih',
+      'Kimya Öğretmeni', 'Kimya', 'Müzik Öğretmeni', 'Müzik',
+      'Beden Eğitimi Öğretmeni', 'Beden Eğitimi', 'Din Kültürü ve Ahlak Bilgisi Öğretmeni', 'Din Kültürü',
+      'Fizik Öğretmeni', 'Fizik', 'Felsefe Öğretmeni', 'Felsefe', 'Görsel Sanatlar'
     ];
     
     for (const b of branches) {
@@ -129,14 +141,11 @@ function extractStaff(html) {
       }
     }
     
-    if (!name) {
-      name = text;
-      branch = 'Öğretmen'; // Default branş
-    }
+    if (!name) name = text;
     
-    // Tekrar kontrolü
+    // Geçersiz veya anlamsız verileri atla
     const key = name + branch;
-    if (seen.has(key) || name.includes('.....') || name.length < 2) return;
+    if (seen.has(key) || name.includes('.....') || name.length < 3 || name.toLowerCase().includes('boş')) return;
     seen.add(key);
     
     staff.push({ ad: name, brans: branch });
@@ -145,43 +154,46 @@ function extractStaff(html) {
   return staff;
 }
 
-// Haberleri çıkar
+// Haberleri ve duyuruları çıkar
 function extractNews(html) {
+  if (!html) return [];
   const $ = cheerio.load(html);
-  const news = [];
+  const items = [];
   const seen = new Set();
   
   $('a[href*="/icerikler/"]').each((_, el) => {
     const title = $(el).text().trim();
     const href = $(el).attr('href');
     
-    if (!title || title.length < 5 || title.length > 200 || !href) return;
+    if (!title || title.length < 10 || title.length > 250 || !href) return;
     
     const dateMatch = title.match(/(\d{2}-\d{2}-\d{4})/);
     const date = dateMatch ? dateMatch[1] : '';
-    const cleanTitle = title.replace(/\d{2}-\d{2}-\d{4}/, '').trim();
+    const cleanTitle = title.replace(/\d{2}-\d{2}-\d{4}/, '').replace(/\s+/g, ' ').trim();
     
-    if (cleanTitle && !seen.has(cleanTitle) && cleanTitle.length > 5) {
+    if (cleanTitle && !seen.has(cleanTitle) && cleanTitle.length > 5 && !href.includes('listele_')) {
       seen.add(cleanTitle);
-      news.push({
+      items.push({
         baslik: cleanTitle,
         tarih: date,
-        link: href.startsWith('http') ? href : BASE_URL + href
+        link: href.startsWith('http') ? href : BASE_URL + (href.startsWith('/') ? href : '/' + href)
       });
     }
   });
   
-  return news.slice(0, 25);
+  // En yeni olanları (veya ilk 30'u) al
+  return items.slice(0, 30);
 }
 
 // İstatistikleri çıkar
 function extractStats(html) {
+  if (!html) return {};
   const text = cheerio.load(html)('body').text();
   const stats = {};
   
-  const derslik = text.match(/Derslik\s*Sayısı\s*(\d+)/i);
-  const ogretmen = text.match(/Öğretmen\s*Sayısı\s*(\d+)/i);
-  const ogrenci = text.match(/Öğrenci\s*Sayısı\s*(\d+)/i);
+  const derslik = text.match(/Derslik\s*Sayısı[\s:]*(\d+)/i);
+  const ogretmen = text.match(/Öğretmen\s*Sayısı[\s:]*(\d+)/i);
+  const ogrenci = text.match(/Öğrenci\s*Sayısı[\s:]*(\d+)/i);
   
   if (derslik) stats.derslikSayisi = parseInt(derslik[1]);
   if (ogretmen) stats.ogretmenSayisi = parseInt(ogretmen[1]);
@@ -192,20 +204,22 @@ function extractStats(html) {
 
 // İletişim bilgilerini çıkar
 function extractContact(html) {
+  if (!html) return {};
   const text = cheerio.load(html)('body').text();
   const contact = {};
   
-  const adres = text.match(/Adres:\s*([^\n]+)/i);
+  const adres = text.match(/Adres:?\s*([^\n]+)/i);
   const tel = text.match(/Telefon\s*\(?\d{3}\)?\s*\d{3}\s*\d{2}\s*\d{2}/i);
   
   if (adres) contact.adres = adres[1].trim();
-  if (tel) contact.telefon = tel[0].replace('Telefon', '').trim();
+  if (tel) contact.telefon = tel[0].replace(/Telefon\s*/i, '').trim();
   
   return contact;
 }
 
 // Site haritasından ek sayfa URL'leri keşfet
 function discoverAdditionalPages(html) {
+  if (!html) return [];
   const $ = cheerio.load(html);
   const urls = [];
   const seen = new Set();
@@ -214,28 +228,28 @@ function discoverAdditionalPages(html) {
     const href = $(el).attr('href');
     if (!href || seen.has(href)) return;
     
-    // Sadece content pages, liste sayfalarını atla
+    // Liste ve kategori sayfalarını atla, sadece içerik sayfaları
     if (href.includes('listele_') || href.includes('#')) return;
     
-    const fullUrl = href.startsWith('http') ? href : BASE_URL + href;
+    const fullUrl = href.startsWith('http') ? href : BASE_URL + (href.startsWith('/') ? href : '/' + href);
     if (fullUrl.startsWith(BASE_URL)) {
       seen.add(href);
       const title = $(el).text().trim();
-      if (title && title.length > 3 && title.length < 150) {
+      if (title && title.length > 5 && title.length < 150) {
         urls.push({ url: fullUrl, title: title });
       }
     }
   });
   
-  return urls.slice(0, 30); // Max 30 ek sayfa
+  return urls.slice(0, 20); // Performans için max 20 dinamik ek sayfa
 }
 
 // ══════════════════════════════════
-// ANA SCRAPE FONKSİYONU
+// ANA SCRAPE FONKSİYONU - PARALEL ve HIZLI
 // ══════════════════════════════════
 async function scrapeSchoolData() {
-  console.log('🔄 Okul web sitesi taranıyor (tüm sayfalar)...');
-  console.log(`📍 Kaynak: ${BASE_URL}\n`);
+  console.log('\n🔄 Okul web sitesi taranıyor (Akıllı ve Paralel Tarama)...');
+  console.log(`📍 Kaynak: ${BASE_URL}`);
   
   const scrapedData = {
     scraped_at: new Date().toISOString(),
@@ -249,65 +263,64 @@ async function scrapeSchoolData() {
     additionalContent: []
   };
   
-  // 1. Ana sayfaları çek
-  for (const page of PAGES_TO_SCRAPE) {
-    const fullUrl = page.url.startsWith('http') ? page.url : BASE_URL + page.url;
-    console.log(`  📄 ${page.label}`);
+  // 1. Ana sayfaları 3'lü gruplar halinde paralel çek
+  const chunkSize = 3;
+  for (let i = 0; i < PAGES_TO_SCRAPE.length; i += chunkSize) {
+    const chunk = PAGES_TO_SCRAPE.slice(i, i + chunkSize);
     
-    const html = await fetchPage(fullUrl);
-    if (!html) continue;
-    
-    const text = extractText(html);
-    scrapedData.pages[page.category] = {
-      label: page.label,
-      url: fullUrl,
-      content: text.substring(0, 8000) // 8K karakter per sayfa
-    };
-    
-    // Kadro sayfası — öğretmen listesi
-    if (page.category === 'kadro') {
-      scrapedData.staff = extractStaff(html);
-      console.log(`    → ${scrapedData.staff.length} personel bulundu`);
-    }
-    
-    // Ana sayfa — istatistikler + haberler
-    if (page.category === 'anasayfa') {
-      scrapedData.stats = extractStats(html);
-      scrapedData.news = extractNews(html);
-    }
-    
-    // İletişim
-    if (page.category === 'iletisim') {
-      scrapedData.contact = extractContact(html);
-    }
-    
-    // Haberler
-    if (page.category === 'haberler') {
-      const newsFromPage = extractNews(html);
-      scrapedData.news = [...scrapedData.news, ...newsFromPage];
-    }
-    
-    // Duyurular
-    if (page.category === 'duyurular') {
-      scrapedData.announcements = extractNews(html);
-    }
-    
-    // Site haritasından ek sayfaları keşfet
-    if (page.category === 'siteharitasi') {
-      const additionalUrls = discoverAdditionalPages(html);
-      console.log(`    → ${additionalUrls.length} ek sayfa keşfedildi`);
+    const promises = chunk.map(async (page) => {
+      const fullUrl = page.url.startsWith('http') ? page.url : BASE_URL + page.url;
+      console.log(`  📄 Çekiliyor: ${page.label}...`);
       
-      // Ek sayfaları da çek
-      for (const extra of additionalUrls.slice(0, 15)) {
-        // Zaten çektiğimiz sayfaları atla
+      const html = await fetchPage(fullUrl);
+      if (!html) return null;
+      
+      const text = extractText(html);
+      
+      // Sayfaya özel veri çıkarmalar
+      if (page.category === 'kadro') scrapedData.staff = extractStaff(html);
+      if (page.category === 'anasayfa') {
+        scrapedData.stats = extractStats(html);
+        scrapedData.news = extractNews(html);
+      }
+      if (page.category === 'iletisim') scrapedData.contact = extractContact(html);
+      if (page.category === 'haberler') scrapedData.news = [...scrapedData.news, ...extractNews(html)];
+      if (page.category === 'duyurular') scrapedData.announcements = extractNews(html);
+      
+      let additionalUrls = [];
+      if (page.category === 'siteharitasi') additionalUrls = discoverAdditionalPages(html);
+
+      return {
+        category: page.category,
+        label: page.label,
+        url: fullUrl,
+        content: text.substring(0, 8000),
+        additionalUrls
+      };
+    });
+    
+    const results = await Promise.all(promises);
+    
+    let discoveredUrls = [];
+    results.forEach(res => {
+      if (res) {
+        scrapedData.pages[res.category] = { label: res.label, url: res.url, content: res.content };
+        if (res.additionalUrls && res.additionalUrls.length > 0) discoveredUrls = res.additionalUrls;
+      }
+    });
+    
+    // Site haritasından yeni keşfedilenleri çek
+    if (discoveredUrls.length > 0) {
+      console.log(`    → ${discoveredUrls.length} yeni ek sayfa bulundu, indiriliyor...`);
+      for (const extra of discoveredUrls) {
         const alreadyScraped = Object.values(scrapedData.pages).some(p => p.url === extra.url);
         if (alreadyScraped) continue;
         
-        console.log(`    📄 Ek: ${extra.title.substring(0, 50)}`);
+        console.log(`    📄 Ek: ${extra.title.substring(0, 40)}...`);
         const extraHtml = await fetchPage(extra.url);
         if (extraHtml) {
           const extraText = extractText(extraHtml);
-          if (extraText.length > 100) {
+          if (extraText.length > 150) {
             scrapedData.additionalContent.push({
               title: extra.title,
               url: extra.url,
@@ -315,11 +328,13 @@ async function scrapeSchoolData() {
             });
           }
         }
-        await new Promise(r => setTimeout(r, 300));
       }
     }
     
-    await new Promise(r => setTimeout(r, 300)); // Rate limiting
+    // Rate limit aşmamak için chunk aralarında bekle
+    if (i + chunkSize < PAGES_TO_SCRAPE.length) {
+      await new Promise(r => setTimeout(r, 500));
+    }
   }
   
   // Tekrar eden haberleri temizle
@@ -330,7 +345,7 @@ async function scrapeSchoolData() {
     return true;
   });
   
-  console.log(`\n✅ Tarama tamamlandı!`);
+  console.log(`\n✅ Mükemmel Tarama Tamamlandı!`);
   console.log(`   📄 Sayfa: ${Object.keys(scrapedData.pages).length}`);
   console.log(`   👨‍🏫 Personel: ${scrapedData.staff.length}`);
   console.log(`   📰 Haber: ${scrapedData.news.length}`);
@@ -345,130 +360,81 @@ async function scrapeSchoolData() {
 // ══════════════════════════════════
 function formatDataForAI(scrapedData, staticData) {
   let ctx = `# OKUL BİLGİ TABANI — ${staticData.genel.ad}
-# Son güncelleme: ${new Date(scrapedData.scraped_at).toLocaleString('tr-TR')}
+# Son Güncelleme: ${new Date(scrapedData.scraped_at).toLocaleString('tr-TR')}
 
 ## GENEL BİLGİLER
-- Okul Adı: ${staticData.genel.ad}
-- İl/İlçe: ${staticData.genel.il} / ${staticData.genel.ilce}
+- Adı: ${staticData.genel.ad}
+- Konum: ${staticData.genel.il} / ${staticData.genel.ilce}
 - Tür: ${staticData.genel.tur}
 - Bağlı Kurum: ${staticData.genel.bagliOlduguKurum}
-- Öğretim: ${staticData.genel.ogretimTuru}
-- Süre: ${staticData.genel.ogrenimSuresi}
-- Proje Okulu: ${staticData.genel.projeOkulu}
+- Öğretim: ${staticData.genel.ogretimTuru} (${staticData.genel.ogrenimSuresi})
 - Programlar: ${staticData.genel.programlar}
-- Web: ${staticData.genel.website}
+- Website: ${staticData.genel.website}
 
 ## İSTATİSTİKLER
 - Derslik: ${scrapedData.stats.derslikSayisi || staticData.istatistikler.derslikSayisi}
 - Öğretmen: ${scrapedData.stats.ogretmenSayisi || staticData.istatistikler.ogretmenSayisi}
 - Öğrenci: ${scrapedData.stats.ogrenciSayisi || staticData.istatistikler.ogrenciSayisi}
-- Üniversite Yerleştirme: ${staticData.istatistikler.ustOgrenimeYerlestirmeOrani}
+- Üniversite Başarısı: ${staticData.istatistikler.ustOgrenimeYerlestirmeOrani}
 
 ## İLETİŞİM
 - Adres: ${scrapedData.contact.adres || staticData.iletisim.adres}
 - Telefon: ${scrapedData.contact.telefon || staticData.iletisim.telefon}
-- Web: ${staticData.iletisim.web}
 - Randevu: ${staticData.iletisim.randevu}
 
-## TARİHÇE
-${staticData.tarihce}
-
 ## ALAN VE DALLAR
-- Alan: ${staticData.alanVeDallar.alan}
-- Dal: ${staticData.alanVeDallar.dal}
+- Bilişim Teknolojileri Alanı - Web Programcılığı Dalı
 - ${staticData.alanVeDallar.aciklama}
 - İş Alanları: ${staticData.alanVeDallar.isAlanlari}
-- Neden Tercih: ${staticData.alanVeDallar.nedenTercihEtmeliyim}
+- Neden Tercih Edilmeli: ${staticData.alanVeDallar.nedenTercihEtmeliyim}
 
 ## KAYIT BİLGİLERİ
-### ATP (Anadolu Teknik Programı)
-- Kontenjan: ${staticData.kayitBilgileri.atp.kontenjan}
-- Taban Puanı: ${staticData.kayitBilgileri.atp.tabanPuani}
-- Yüzdelik: ${staticData.kayitBilgileri.atp.yuzdelikDilim}
+### ATP (Anadolu Teknik Programı) - Sınavlı
+- Kontenjan: ${staticData.kayitBilgileri.atp.kontenjan} | Taban Puanı: ${staticData.kayitBilgileri.atp.tabanPuani}
 - Staj: ${staticData.kayitBilgileri.atp.staj}
-### AMP (Anadolu Meslek Programı)
-- Kontenjan: ${staticData.kayitBilgileri.amp.kontenjan}
-- Taban Puanı: ${staticData.kayitBilgileri.amp.tabanPuani}
+### AMP (Anadolu Meslek Programı) - Sınavsız
+- Kontenjan: ${staticData.kayitBilgileri.amp.kontenjan} | Taban Puanı: ${staticData.kayitBilgileri.amp.tabanPuani}
 - Staj: ${staticData.kayitBilgileri.amp.staj}
 
-## FİZİKİ İMKÂNLAR
+## FİZİKİ İMKÂNLAR & EK BİLGİLER
 ${staticData.fizikiImkanlar.map(f => `- ${f}`).join('\n')}
-
-## EK BİLGİLER
 - Kıyafet: ${staticData.kiyafet}
-- Burs: ${staticData.burs}
-- Yurt: ${staticData.yurt}
-- Servis: ${staticData.servis}
-- DYK: ${staticData.dyk}
+- Burs/Yurt/Servis: ${staticData.burs} / ${staticData.yurt} / ${staticData.servis}
 
-## BAŞARILAR
+## BAŞARILAR & PROJELER
 ${staticData.basarilar.map(b => `- ${b}`).join('\n')}
-
-## PROJELER
-${staticData.projeler}
+- Projeler: ${staticData.projeler}
 `;
 
-  // ══ KADRO LİSTESİ — Tüm Öğretmenler ══
+  // ══ KADRO LİSTESİ ══
   if (scrapedData.staff && scrapedData.staff.length > 0) {
-    ctx += '\n## OKUL KADROSU — TÜM PERSONEL LİSTESİ\n';
-    
-    // Branşlara göre grupla
+    ctx += '\n## OKUL KADROSU (TÜM PERSONEL)\n';
     const groups = {};
     scrapedData.staff.forEach(s => {
       if (!groups[s.brans]) groups[s.brans] = [];
       groups[s.brans].push(s.ad);
     });
-    
     for (const [branch, names] of Object.entries(groups)) {
       ctx += `\n### ${branch}\n`;
       names.forEach(n => { ctx += `- ${n}\n`; });
     }
   }
 
-  // Haberler
+  // Haberler & Duyurular
   if (scrapedData.news.length > 0) {
     ctx += '\n## SON HABERLER\n';
-    scrapedData.news.slice(0, 20).forEach(n => {
-      ctx += `- ${n.tarih ? '[' + n.tarih + '] ' : ''}${n.baslik}\n`;
-    });
+    scrapedData.news.slice(0, 15).forEach(n => { ctx += `- ${n.tarih ? '[' + n.tarih + '] ' : ''}${n.baslik}\n`; });
   }
-
-  // Duyurular
   if (scrapedData.announcements.length > 0) {
     ctx += '\n## DUYURULAR\n';
-    scrapedData.announcements.slice(0, 10).forEach(d => {
-      ctx += `- ${d.baslik}\n`;
-    });
+    scrapedData.announcements.slice(0, 10).forEach(d => { ctx += `- ${d.baslik}\n`; });
   }
 
-  // Etkinlikler
-  ctx += `\n## ETKİNLİKLER
-### Geziler
-${staticData.etkinlikler.geziler.map(g => `- ${g}`).join('\n')}
-### Kulüpler
-${staticData.etkinlikler.kulupler.map(k => `- ${k}`).join('\n')}
-### Yarışmalar
-${staticData.etkinlikler.yarismalari.map(y => `- ${y}`).join('\n')}
-`;
-
-  // Rehberlik
-  ctx += `\n## REHBERLİK
-${staticData.rehberlik.hizmetler.map(h => `- ${h}`).join('\n')}
-`;
-
-  // Taranan sayfalardan ek içerik
-  if (scrapedData.additionalContent && scrapedData.additionalContent.length > 0) {
-    ctx += '\n## EK İÇERİKLER (Websitesinden Çekildi)\n';
-    scrapedData.additionalContent.forEach(ac => {
-      ctx += `\n### ${ac.title}\n${ac.content.substring(0, 2000)}\n`;
-    });
-  }
-
-  // Taranan sayfa içerikleri (SSS, fiziki mekanlar vb.)
+  // Taranan özel sayfalar
   const importantPages = ['sss', 'fiziki', 'sinav', 'bolum', 'kiyafet', 'eguvenlik'];
   for (const key of importantPages) {
     if (scrapedData.pages[key]) {
-      ctx += `\n### ${scrapedData.pages[key].label}\n${scrapedData.pages[key].content.substring(0, 3000)}\n`;
+      ctx += `\n### ${scrapedData.pages[key].label}\n${scrapedData.pages[key].content.substring(0, 2000)}\n`;
     }
   }
 

@@ -7,11 +7,10 @@
   'use strict';
 
   // ── Config ──
-  // Widget'ın bağlanacağı API sunucusu adresi
-  // Sunucu deploy edildiğinde bu adresi güncelleyin
-  const API_BASE = window.TTMTAL_CHATBOT_API || (window.location.hostname === 'localhost' 
-    ? `http://localhost:${window.location.port || 3000}` 
-    : 'http://localhost:3000');
+  // Kendi yüklendiği adresi (Örn: Koyeb sunucu adresi) otomatik bulur
+  const scriptTag = document.currentScript || document.querySelector('script[src*="chatbot-widget.js"]');
+  const serverUrl = scriptTag ? new URL(scriptTag.src).origin : 'http://localhost:3000';
+  const API_BASE = window.TTMTAL_CHATBOT_API || serverUrl;
 
   // ── Styles ──
   const WIDGET_CSS = `

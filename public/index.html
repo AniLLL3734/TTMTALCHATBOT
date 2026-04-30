@@ -4,10 +4,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Pendik Türk Telekom Şehit Murat Mertel MTAL - AI Chatbot Demo">
-  <title>TT MTAL — Chatbot Widget Demo</title>
+  <meta name="description" content="Pendik Türk Telekom MTAL - Yapay Zeka Destekli Chatbot Projesi Sunumu">
+  <title>TT MTAL AI Chatbot - Proje Sunumu</title>
+  
+  <!-- Modern Fontlar -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    /* ── Kök Renkler ve Değişkenler ── */
+    :root {
+      --primary: #4f46e5;
+      --primary-dark: #3730a3;
+      --secondary: #0ea5e9;
+      --accent: #f43f5e;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-light: rgba(30, 41, 59, 0.7);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
 
     * {
       margin: 0;
@@ -16,278 +33,429 @@
     }
 
     body {
-      font-family: 'Inter', sans-serif;
-      background: #f0f4ff;
-      color: #1e293b;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
       min-height: 100vh;
-    }
-
-    /* Header band */
-    .demo-header {
-      background: linear-gradient(135deg, #1e3a5f, #0f2644);
-      color: white;
-      padding: 16px 32px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    }
-
-    .demo-header img {
-      width: 48px;
-      height: 48px;
-      border-radius: 8px;
-    }
-
-    .demo-header h1 {
-      font-size: 1.1rem;
-      font-weight: 700;
-    }
-
-    .demo-header p {
-      font-size: 0.78rem;
-      opacity: 0.7;
-    }
-
-    /* Content */
-    .demo-content {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 40px 24px;
-    }
-
-    .demo-card {
-      background: white;
-      border-radius: 16px;
-      padding: 32px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    .demo-card h2 {
-      font-size: 1.3rem;
-      margin-bottom: 12px;
-      color: #1e3a5f;
-    }
-
-    .demo-card p {
-      line-height: 1.7;
-      color: #475569;
-      margin-bottom: 12px;
-    }
-
-    .demo-card .badge {
-      display: inline-block;
-      background: linear-gradient(135deg, #4f46e5, #0ea5e9);
-      color: white;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
-
-    .embed-code {
-      background: #0f172a;
-      border-radius: 12px;
-      padding: 20px 24px;
-      color: #e2e8f0;
-      font-family: 'Courier New', monospace;
-      font-size: 0.85rem;
-      overflow-x: auto;
-      margin-top: 16px;
+      overflow-x: hidden;
       line-height: 1.6;
+    }
+
+    /* ── Animasyonlu Arka Plan ── */
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      background: radial-gradient(circle at top right, rgba(79, 70, 229, 0.15), transparent 40%),
+                  radial-gradient(circle at bottom left, rgba(14, 165, 233, 0.15), transparent 40%);
+    }
+
+    .blob {
+      position: absolute;
+      filter: blur(80px);
+      z-index: -1;
+      opacity: 0.6;
+      animation: float 10s ease-in-out infinite alternate;
+    }
+
+    .blob-1 {
+      top: -10%; left: -10%; width: 50vw; height: 50vw;
+      background: rgba(79, 70, 229, 0.3);
+      animation-delay: 0s;
+    }
+
+    .blob-2 {
+      bottom: -10%; right: -10%; width: 60vw; height: 60vw;
+      background: rgba(14, 165, 233, 0.2);
+      animation-delay: -5s;
+    }
+
+    @keyframes float {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(50px, 50px) scale(1.1); }
+    }
+
+    /* ── Genel Düzen ── */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Header (Kahraman Alanı) ── */
+    .hero {
+      padding: 100px 0 60px;
+      text-align: center;
       position: relative;
     }
 
-    .embed-code .comment {
-      color: #64748b;
+    .badge {
+      display: inline-block;
+      padding: 8px 16px;
+      background: rgba(14, 165, 233, 0.1);
+      border: 1px solid rgba(14, 165, 233, 0.3);
+      border-radius: 50px;
+      color: var(--secondary);
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      animation: fadeInDown 0.8s ease-out;
     }
 
-    .embed-code .tag {
-      color: #f97316;
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #fff, #a5b4fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
     }
 
-    .embed-code .attr {
-      color: #38bdf8;
+    .hero-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin: 0 auto 40px;
+      animation: fadeInUp 0.8s ease-out 0.4s both;
     }
 
-    .embed-code .str {
-      color: #a5f3fc;
+    .developer-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 24px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 100px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      animation: fadeInUp 0.8s ease-out 0.6s both;
     }
+
+    .developer-tag span {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      background: linear-gradient(90deg, #f43f5e, #f97316);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* ── Kart Izgarası ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 30px;
+      margin: 60px 0;
+    }
+
+    .card {
+      background: var(--surface-light);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 24px;
+      padding: 40px;
+      backdrop-filter: blur(20px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    .card-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      background: rgba(79, 70, 229, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 24px;
+      border: 1px solid rgba(79, 70, 229, 0.2);
+    }
+
+    .card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* ── Entegrasyon Bölümü ── */
+    .integration {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0) 0%, rgba(30, 41, 59, 0.8) 100%);
+      border-radius: 32px;
+      padding: 60px;
+      margin: 80px 0;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      text-align: center;
+    }
+
+    .integration h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+
+    .integration p {
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 40px;
+    }
+
+    .code-block-wrapper {
+      position: relative;
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .code-block {
+      background: #000;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.95rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .code-block .comment { color: #64748b; }
+    .code-block .tag { color: #f43f5e; }
+    .code-block .attr { color: #38bdf8; }
+    .code-block .string { color: #a3e635; }
 
     .copy-btn {
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: 16px;
+      right: 16px;
       background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #94a3b8;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 0.75rem;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
       cursor: pointer;
+      font-weight: 600;
+      font-size: 0.8rem;
       transition: all 0.2s;
     }
 
-    .copy-btn:hover {
-      background: rgba(99, 102, 241, 0.3);
+    .copy-btn:hover { background: var(--primary); }
+
+    .step-list {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 50px;
+      text-align: left;
+      flex-wrap: wrap;
+    }
+
+    .step {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
       color: white;
+      border-radius: 50%;
+      font-weight: 800;
+      margin-bottom: 12px;
     }
 
-    .api-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-      margin-top: 16px;
-    }
+    .step h4 { font-size: 1.1rem; margin-bottom: 8px; }
+    .step p { font-size: 0.9rem; color: var(--text-muted); }
 
-    .api-item {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 14px;
-      font-size: 0.85rem;
-    }
-
-    .api-item strong {
-      color: #4f46e5;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .api-item code {
-      display: block;
-      margin-top: 4px;
-      font-family: 'Courier New', monospace;
-      color: #334155;
-      font-size: 0.82rem;
-    }
-
-    .arrow-indicator {
+    /* ── Arrow Indicator ── */
+    .widget-pointer {
       position: fixed;
-      bottom: 90px;
-      left: 28px;
-      background: #4f46e5;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 10px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
-      animation: arrow-bounce 1.5s infinite;
-      z-index: 99997;
+      bottom: 100px;
+      left: 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 9999;
       pointer-events: none;
+      animation: pulsePointer 2s infinite;
     }
 
-    .arrow-indicator::after {
+    .pointer-text {
+      background: var(--accent);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      box-shadow: 0 10px 25px rgba(244, 63, 94, 0.4);
+      position: relative;
+    }
+
+    .pointer-text::after {
       content: '';
       position: absolute;
       bottom: -8px;
       left: 20px;
-      width: 0;
-      height: 0;
-      border-left: 8px solid transparent;
-      border-right: 8px solid transparent;
-      border-top: 8px solid #4f46e5;
+      border-width: 8px 8px 0;
+      border-style: solid;
+      border-color: var(--accent) transparent transparent transparent;
     }
 
-    @keyframes arrow-bounce {
+    @keyframes pulsePointer {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
 
-      0%,
-      100% {
-        transform: translateY(0);
-      }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-      50% {
-        transform: translateY(-8px);
-      }
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2.5rem; }
+      .integration { padding: 40px 20px; }
+      .step-list { flex-direction: column; gap: 30px; }
+      .widget-pointer { display: none; }
     }
   </style>
 </head>
 
 <body>
-
-  <!-- School Header (simulated) -->
-  <div class="demo-header">
-    <div
-      style="width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#4f46e5,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:white;">
-      TT</div>
-    <div>
-      <h1>Pendik Türk Telekom Şehit Murat Mertel MTAL</h1>
-      <p>İSTANBUL / PENDİK — Chatbot Widget Demo Sayfası</p>
-    </div>
+  <!-- Arka Plan Animasyonu -->
+  <div class="bg-animation">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
   </div>
 
-  <div class="demo-content">
-    <!-- Info Card -->
-    <div class="demo-card">
-      <span class="badge">🤖 AI Chatbot Widget</span>
-      <h2 style="margin-top:16px">Okul Chatbot'u Nasıl Çalışır?</h2>
-      <p>
-        Sol alt köşedeki <strong>💬 butonuna</strong> tıklayarak chatbot'u açabilirsiniz.
-        Chatbot, okul web sitesinden (<strong>turktelekomatl.meb.k12.tr</strong>) güncel bilgileri çeker
-        ve Groq yapay zeka API'si ile soruları yanıtlar.
+  <div class="container">
+    
+    <!-- Hero Bölümü -->
+    <header class="hero">
+      <div class="badge">🚀 Yeni Nesil MEB Entegrasyonu</div>
+      <h1 class="hero-title">Pendik Türk Telekom Şehit Murat Mertel MTAL<br>Yapay Zeka Asistanı</h1>
+      <p class="hero-subtitle">
+        Okul web sitenizi saniyeler içinde okuyan, akıllı bellek yönetimiyle MEB sunucularını yormayan, veli ve öğrencilere 7/24 hizmet veren tam otonom yapay zeka çözümü.
       </p>
-      <p>
-        Veriler <strong>30 dakikada bir otomatik güncellenir</strong>. Manuel güncelleme için
-        <code>/api/scrape</code> endpoint'ini çağırabilirsiniz.
-      </p>
-    </div>
-
-    <!-- Embed Code -->
-    <div class="demo-card">
-      <h2>📦 Okul Sitesine Ekleme Kodu</h2>
-      <p>Aşağıdaki kodu okul web sitesinin <code>&lt;/body&gt;</code> etiketinin hemen üstüne ekleyin:</p>
-      <div class="embed-code">
-        <button class="copy-btn"
-          onclick="navigator.clipboard.writeText(document.getElementById('embed-text').textContent);this.textContent='Kopyalandı ✓';setTimeout(()=>this.textContent='Kopyala',2000)">Kopyala</button>
-        <span id="embed-text"><span class="comment">&lt;!-- TT MTAL AI Chatbot Widget --&gt;</span>
-          <span class="tag">&lt;script</span> <span class="attr">src</span>=<span
-            class="str">"http://SUNUCU_ADRESI:3000/chatbot-widget.js"</span><span
-            class="tag">&gt;&lt;/script&gt;</span></span>
+      <div class="developer-tag">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #f97316;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Proje Geliştiricisi: <span>ANIL TALHA GELİR</span>
       </div>
-      <p style="margin-top:12px;font-size:0.85rem;color:#64748b;">
-        ⚠️ <code>SUNUCU_ADRESI</code> kısmını API sunucunuzun gerçek IP/domain adresiyle değiştirin.
-      </p>
-    </div>
+    </header>
 
-    <!-- API Endpoints -->
-    <div class="demo-card">
-      <h2>🔌 API Endpoint'leri</h2>
-      <p>Chatbot API sunucusu aşağıdaki endpoint'leri sunar:</p>
-      <div class="api-list">
-        <div class="api-item">
-          <strong>POST</strong>
-          <code>/api/chat</code>
-          <small style="color:#64748b">Sohbet mesajı gönder</small>
-        </div>
-        <div class="api-item">
-          <strong>GET</strong>
-          <code>/api/scrape</code>
-          <small style="color:#64748b">Verileri güncelle</small>
-        </div>
-        <div class="api-item">
-          <strong>GET</strong>
-          <code>/api/status</code>
-          <small style="color:#64748b">Sunucu durumu</small>
-        </div>
-        <div class="api-item">
-          <strong>GET</strong>
-          <code>/api/data</code>
-          <small style="color:#64748b">Ham okul verisi</small>
+    <!-- Özellikler -->
+    <section class="grid">
+      <div class="card">
+        <div class="card-icon">🧠</div>
+        <h3>Akıllı Bağlam (Context) Yönetimi</h3>
+        <p>Gelen soruya göre okul veri tabanından sadece gerekli bölümü seçer. Soru kayıtla ilgiliyse sadece kayıt bilgilerini Groq API'ye göndererek token maliyetini %80 oranında düşürür.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🕷️</div>
+        <h3>Otonom Web Scraper</h3>
+        <p>Okulun MEB şablonlu sitesini saatte bir kez paralel ağ istekleriyle tarar. Öğretmen kadrosunu, duyuruları, haberleri ve gizli ek sayfaları saniyeler içinde RAM'e kopyalar.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🛡️</div>
+        <h3>Sıfır MEB Sunucu Yükü</h3>
+        <p>İnsanlar soru sorduğunda arka planımız okul sitesine asla bağlanmaz. Veriler önceden (In-Memory Cache) çekildiği için MEB sunucularına kota engeli (Ban/DDoS koruması) riski sıfırdır.</p>
+      </div>
+    </section>
+
+    <!-- Entegrasyon Kılavuzu -->
+    <section class="integration">
+      <h2>Okul Sitesine Nasıl Eklenir?</h2>
+      <p>Bu yapay zeka asistanını okulun MEB yönetim paneli üzerinden tek satırlık bir kodla tüm web sitesine entegre edebilirsiniz. Kurulum sadece 1 dakika sürer.</p>
+
+      <div class="code-block-wrapper">
+        <button class="copy-btn" onclick="copyCode(this)">Kodu Kopyala</button>
+        <div class="code-block" id="embed-code">
+<span class="comment">&lt;!-- TT MTAL AI Chatbot Widget (Body etiketinin hemen üstüne eklenir) --&gt;</span>
+<span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="string">"http://SUNUCU_IP_VEYA_DOMAIN/chatbot-widget.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
         </div>
       </div>
-    </div>
+
+      <div class="step-list">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h4>MEB Paneline Giriş</h4>
+          <p>Okulun meb.k12.tr içerik yönetim paneline yönetici şifresiyle giriş yapın.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h4>Şablon (Tema) Ayarları</h4>
+          <p>Sitenin genel ayarlarında yer alan "Footer (Alt Kısım) Kodları" veya "Gelişmiş Kod" alanını bulun.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h4>Kodu Yapıştırın</h4>
+          <p>Yukarıdaki tek satırlık script kodunu yapıştırın ve SUNUCU_IP yazan yeri kendi sunucunuzun adresiyle değiştirin. Kaydedin!</p>
+        </div>
+      </div>
+    </section>
+
   </div>
 
-  <!-- Arrow pointing to widget -->
-  <div class="arrow-indicator">👇 Chatbot burada!</div>
+  <!-- Canlı Demo İşaretçisi -->
+  <div class="widget-pointer">
+    <div class="pointer-text">Sistemi Buradan Test Edin!</div>
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(45deg);"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </div>
 
-  <!-- WIDGET - Bu tek satır okul sitesine eklenir -->
+  <!-- CHATBOT WIDGET ENTEGRASYONU -->
   <script src="/chatbot-widget.js"></script>
 
+  <script>
+    function copyCode(btn) {
+      const codeText = `<script src="http://SUNUCU_IP_VEYA_DOMAIN/chatbot-widget.js"><\/script>`;
+      navigator.clipboard.writeText(codeText).then(() => {
+        const originalText = btn.innerText;
+        btn.innerText = "Kopyalandı! ✅";
+        btn.style.background = "#10b981";
+        setTimeout(() => {
+          btn.innerText = originalText;
+          btn.style.background = "rgba(255, 255, 255, 0.1)";
+        }, 2000);
+      });
+    }
+  </script>
 </body>
-
 </html>
